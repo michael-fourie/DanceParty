@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 
 import ReactDOM from 'react-dom';
+import axios from "axios";
 
 import Button from "@material-ui/core/Button"
 
@@ -19,6 +20,23 @@ function RecordComponent(props) {
 
     const [isRecording, setIsRecording] = useState(false);
     const [videoStream, setVideoStream] = useState();
+
+    const sendFileToBackend = (fileBlob) => {
+        let file = new File([fileBlob], "inputVideo.webm", {
+            type: "video/webm"
+        });
+        console.log(file);
+
+        let formData = new FormData();
+        formData.append('file', file);
+
+        axios
+        .post("placeholderURl", formData)
+        .then(res => {
+            console.log(res.data);
+        })
+        .catch(err => console.log(err));
+    }
 
     function handleDataAvailable(event) {
         console.log(event);
@@ -40,17 +58,15 @@ function RecordComponent(props) {
         let link = document.getElementById('dload');
 
         link.href = url;
-        link.download = "test.mkv";
+        link.download = "test.webm";
+
+        sendFileToBackend(blob);
+
         
     }
 
 
     const handleClick = () => {
-
-        
-
-
-        
 
         let facingMode = "user";
         let constraints = {
@@ -59,9 +75,6 @@ function RecordComponent(props) {
                 facingMode: facingMode
             }
         };
-
-        
-
         navigator.mediaDevices.getUserMedia(constraints).then(stream => {
             console.log(stream);
             setIsRecording(true);
@@ -78,11 +91,15 @@ function RecordComponent(props) {
 
         if(isRecording) {
             let options = {
-                mimeType: 'video/mp4',
+                mimeType: 'video/webm',
                 audioBitsPerSecond: 128000,
                 videoBitsPerSecond: 2500000
             };
-            mediaRecorder = new MediaRecorder(videoStream);
+
+            let options2 = {
+                mimeType: 'video/mp4; codecs="avc1.424028, mp4a.40.2"'
+            }
+            mediaRecorder = new MediaRecorder(videoStream, options);
             mediaRecorder.ondataavailable = handleDataAvailable;
             mediaRecorder.start();
 
@@ -90,16 +107,11 @@ function RecordComponent(props) {
 
         }
 
-       
-
     }, [videoStream]);
  
     const handleStopRecording = (e) => {
-
         e.preventDefault();
-
         mediaRecorder.stop();
-
     }
 
     return (
@@ -127,22 +139,5 @@ function RecordComponent(props) {
     )
 
 }
-
-// function RecordComponent(props) {
-//     return (
-//         <div>
-//         {
-//             navigator.mediaDevices.getUserMedia(constraints).then(stream => {
-                
-//                 (
-//                     <video autoplay >
-//                         <source src={stream} type="video/mp4" />
-//                     </video>
-//                 )
-//             })
-//         }
-//         </div>
-//     )
-// }
 
 export default RecordComponent;
