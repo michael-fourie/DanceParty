@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 
-import { Alignment, Navbar } from "@blueprintjs/core";
+
+import AppBar from "@material-ui/core/AppBar";
+import Toolbar from "@material-ui/core/Toolbar";
+import Typography from "@material-ui/core/Typography";
+
+
 
 function LandingPage(props) {
 
 
     return (
-        <Navbar fixedToTop={true} className="bp3-navbar bp3-dark">
-            <Navbar.Group align={Alignment.LEFT}>
-                <Navbar.Heading>DanceParty</Navbar.Heading>
-
-            </Navbar.Group>
-        </Navbar>
+        <AppBar position="static">
+            <Toolbar>
+                <Typography variant="h6">DanceParty</Typography>
+            </Toolbar>
+        </AppBar>
     )
 }
 

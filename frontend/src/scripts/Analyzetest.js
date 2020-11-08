@@ -75,20 +75,30 @@ var done = false;
 
     }
 
-    export async function startPredicting(video) {
+    export async function startPredicting(video, startTime) {
         done = false;
         while(!done) {
             var temp = (await predict(video));
             if(temp != poses[i - 1]) {
                 poses.push(temp);
-                times.push(Date.now()-time);
+                times.push(Date.now() - startTime);
                 i++;
             }
 
         }
 
-        var jsonString = "{pos:" + poses + ",time:" + times + "}";
-        console.log(jsonString);
+        //var jsonString = "{pos:" + poses + ",time:" + times + "}";
+
+       
+
+        let finalObj = {
+            pos: poses,
+            time: times
+        };
+        //generate event sending the final object
+        console.log(finalObj);
+
+        return finalObj;
     }
 
    export async function predict(video) {
