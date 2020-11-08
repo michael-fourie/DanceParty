@@ -1,53 +1,33 @@
-
-// import * as tf from '@tensorflow/tfjs';
-// import * as tmPose from '@teachablemachine/pose';
-
 const tf = require('@tensorflow/tfjs');
 const tmPose = require('@teachablemachine/pose');
-global.fetch = require("node-fetch");
+//global.
+const fetch = require("node-fetch");
 //const { Image, createCanvas } = require('canvas');
+var poses = [];
+var times = [];
+var time = 0;
+var i = 0;
 
-class Analyze {
-    constructor() {
-        this.init();
-        this.poses = [];
-        this.times = [];
-        this.time = 0;
-        this.i = 0;
-        this.URL = "https://teachablemachine.withgoogle.com/models/o-TZh3sFa/";
-        //let model, webcam, ctx, labelContainer, maxPredictions;
-
-        
-        this.model = {};
-        this.maxPredictions = 0;
-        
-    }
-
-    //model, webcam, ctx, labelContainer, maxPredictions;
-
-    // var poses = [];
-    // var times = [];
-    // var time = 0;
-    // var i = 0;
+var done = false;
     // More API functions here:
     // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/pose
 
     // the link to your model provided by Teachable Machine export panel
-    //const URL = "https://teachablemachine.withgoogle.com/models/o-TZh3sFa/";
-    
+    const URL = "https://teachablemachine.withgoogle.com/models/o-TZh3sFa/";
+    let model, webcam, ctx, labelContainer, maxPredictions;
 
-    async init() {
-        const modelURL = ;
-        const metadataURL = this.URL + "metadata.json";
+    export const init = async () => {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
 
         // load the model and metadata
         // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
         // Note: the pose library adds a tmPose object to your window (window.tmPose)
-        this.model = await tmPose.load(modelURL, metadataURL);
+        model = await tmPose.load(modelURL, metadataURL);
 
         tmPose.load(modelURL, metadataURL).then(mod => {
-            this.model = mod;
-            this.maxPredictions = this.model.getTotalClasses();
+            model = mod;
+            maxPredictions = model.getTotalClasses();
 
         }).catch(err => console.log(err));
        
@@ -67,49 +47,76 @@ class Analyze {
         // for (let i = 0; i < maxPredictions; i++) { // and class labels
         //     labelContainer.appendChild(document.createElement("div"));
         // }
+
+        return {model: model, max: maxPredictions};
     }
 
-    async loop(timestamp) {
-        if(this.time == 0){
-            let start = Date.now();
+//     module.exports = async function loop() {
+//         if(time == 0) {
+//             let start = Date.now();
+//         }
+//         //webcam.update(); // update the webcam frame
+//         var temp = (await predict());
+//         if(temp != poses[i - 1]) {
+//             poses.push(temp);
+//             times.push(time-Date.now());
+//             i++;
+//         }
+//         if(done) {
+//             var jsonString = "{pos:" + poses + ",time:" + times + "}";
+//         } else { 
+//             loop();
+//         }
+// }
+
+    export async function stopPredicting() {
+
+        done = true;
+
+    }
+
+    export async function startPredicting(video) {
+        done = false;
+        while(!done) {
+            var temp = (await predict(video));
+            if(temp != poses[i - 1]) {
+                poses.push(temp);
+                times.push(Date.now()-time);
+                i++;
+            }
+
         }
-        //webcam.update(); // update the webcam frame
-        var temp = (await this.predict());
-        if(temp != this.poses[this.i - 1]){
-        this.poses.push(temp);
-        this.times.push(this.time - Date.now());
-        this.i++;
-    }
-    if(this.done){
-    var jsonString = "{pos:" + this.poses + ",time:" + this.times + "}";
-    }else{ 
-    //window.requestAnimationFrame(loop);
-    
-    }
-}
 
-    async predict(video) {
+        var jsonString = "{pos:" + poses + ",time:" + times + "}";
+        console.log(jsonString);
+    }
+
+   export async function predict(video) {
+       console.log(model);
+       console.log(video);
         // Prediction #1: run input through posenet
-        const { pose, posenetOutput } = await this.model.estimatePose(video);
+        const { pose, posenetOutput } = await model.estimatePose(video);
         // // Prediction 2: run input through teachable machine classification model
-        const prediction = await this.model.predict(posenetOutput);
-
+        const prediction = await model.predict(posenetOutput);
         let classPrediction;
-
-        for (let i = 0; i < this.maxPredictions; i++) {
-            classPrediction =
-                prediction[i].className;
+        var max = 0;
+        let classPredictionArray = [];
+        for (let i = 0; i < maxPredictions; i++) {
+            if (max<prediction[i].probability) {
+                classPrediction = prediction[i].className;
+                max = prediction[i].probability;
+                console.log("a");
+            }
+            
+            classPredictionArray.push(classPrediction);
             //labelContainer.childNodes[i].innerHTML = classPrediction;
         }
+        console.log(prediction);
         console.log(classPrediction);
         return classPrediction;
         // finally draw the poses
         //drawPose(pose);
     }
-
-}
-
-
 
 //    module.exports = function drawPose(pose) {
 //         if (webcam.canvas) {
@@ -123,15 +130,11 @@ class Analyze {
 //         }
 //     }
 
-
+//module.exports = init();
 
 // async function main() {
 //     await init();
-//     //predict();
+//     predict();
 // }
 
 // main();
-
-// module.exports = loop;
-
-module.exports = Analyze;

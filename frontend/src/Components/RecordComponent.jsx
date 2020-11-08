@@ -3,7 +3,19 @@ import React, { useState, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom';
 import axios from "axios";
 
+//import Analyze from "../scripts/Analyze"
+
+import {init, loop, predict, startPredicting, stopPredicting } from "../scripts/Analyzetest.js";
+
 import Button from "@material-ui/core/Button"
+
+var poses = [];
+var times = [];
+var time = 0;
+var i = 0;
+//let vid;
+
+let modelObj;
 
 const constraints = {
     audio: false,
@@ -15,11 +27,17 @@ const constraints = {
 let recordedChunks = [];
 let mediaRecorder;
 
+//let Test = new Analyze();
+
 function RecordComponent(props) {
+
+    let vid;
     
 
     const [isRecording, setIsRecording] = useState(false);
     const [videoStream, setVideoStream] = useState();
+
+    const [isCamera, setIsCamera] = useState(false);
 
     const sendFileToBackend = (fileBlob) => {
         let file = new File([fileBlob], "inputVideo.webm", {
@@ -80,6 +98,7 @@ function RecordComponent(props) {
             setIsRecording(true);
             setVideoStream(stream);
             
+            
 
             let video = document.getElementById('vid');
             video.srcObject = stream;
@@ -87,7 +106,7 @@ function RecordComponent(props) {
         })
     }
 
-    useEffect(() => {
+    useEffect(async () => {
 
         if(isRecording) {
             let options = {
@@ -102,12 +121,49 @@ function RecordComponent(props) {
             mediaRecorder = new MediaRecorder(videoStream, options);
             mediaRecorder.ondataavailable = handleDataAvailable;
             mediaRecorder.start();
+            console.log(videoStream.getVideoTracks());
+            let track = videoStream.getVideoTracks()[0];
+            vid = document.getElementById('vid');
+            console.log(vid);
+            vid.onloadeddata = dataLoaded;
+            //predict(vid);
+            //let ret = Test.predict(videoStream);
+            //console.log(ret);
 
             console.log(mediaRecorder);
 
         }
 
     }, [videoStream]);
+
+   
+
+   const handlePrediction = () => {
+       predict(vid);
+   }
+
+   const dataLoaded = () => {
+       predict(vid);
+   }
+
+    async function handleStart() {
+        startPredicting(vid);
+    }
+
+   const handleStop = () => {
+        stopPredicting();
+   }
+    
+
+
+
+    useEffect(async () => {
+
+        //modelObj = init();
+        modelObj = await init();
+        console.log(modelObj.model)
+
+    }, []);
  
     const handleStopRecording = (e) => {
         e.preventDefault();
@@ -133,6 +189,9 @@ function RecordComponent(props) {
             </Button>
 
             <a id="dload">Download!</a>
+
+            <Button onClick={handleStart}>Start Predicting</Button>
+            <Button onClick={handleStop}>Stop Predicting</Button>
             
         </div>
        
